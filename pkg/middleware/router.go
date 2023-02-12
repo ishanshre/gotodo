@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/ishanshre/gotodo/pkg/storage"
 )
 
 func writeJSON(w http.ResponseWriter, status int, v any) error {
@@ -16,6 +17,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) error {
 
 type APIServer struct {
 	listenAddr string
+	store      storage.Storage
 }
 
 type apiFunc func(http.ResponseWriter, *http.Request) error
@@ -24,9 +26,10 @@ type apiError struct {
 	Error string `json:"error"`
 }
 
-func NewAPIServer(listenAddr string) *APIServer {
+func NewAPIServer(listenAddr string, store storage.Storage) *APIServer {
 	return &APIServer{
 		listenAddr: listenAddr,
+		store:      store,
 	}
 }
 
