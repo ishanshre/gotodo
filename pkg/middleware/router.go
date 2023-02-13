@@ -35,7 +35,8 @@ func NewAPIServer(listenAddr string, store storage.Storage) *APIServer {
 
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
-	router.HandleFunc("/", makeHandleFunc(s.handleToDos))
+	router.HandleFunc("/todo", makeHandleFunc(s.handleToDos))
+	router.HandleFunc("/todo/{id}", makeHandleFunc(s.handleToDosById))
 	log.Println("Starting server at port ", s.listenAddr)
 	http.ListenAndServe(s.listenAddr, router)
 }

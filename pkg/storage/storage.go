@@ -2,12 +2,13 @@ package storage
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
 	_ "github.com/lib/pq"
 
-	"github.com/ishanshre/gotodo/models"
+	"github.com/ishanshre/gotodo/pkg/models"
 	"github.com/joho/godotenv"
 )
 
@@ -54,7 +55,16 @@ func (s *PostgresStore) createTodoTable() error {
 	return err
 }
 
-func (s *PostgresStore) CreateToDo(*models.ToDo) error {
+func (s *PostgresStore) CreateToDo(todo *models.ToDo) error {
+	query := `
+		INSERT INTO todo (body, created_at)
+		VALUES ($1, $2)
+	`
+	_, err := s.db.Query(query, todo.Body, todo.CreatedAt)
+	if err != nil {
+		return err
+	}
+	log.Println("Todo Created Successfully")
 	return nil
 }
 func (s *PostgresStore) DeleteToDo(int) error {
@@ -64,8 +74,35 @@ func (s *PostgresStore) UpdateToDo(*models.ToDo) error {
 	return nil
 }
 func (s *PostgresStore) GetTodos() ([]*models.ToDo, error) {
-	return nil, nil
+	rows, err := s.db.Query("SELECT * FROM todo")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	todos := []*models.ToDo{}
+	for rows.Next() {
+		todo, err := scanTodos(rows)
+		if err != nil {
+			return nil, err
+		}
+		todos = append(todos, todo)
+	}
+	return todos, nil
 }
-func (s *PostgresStore) GetToDoById(int) (*models.ToDo, error) {
-	return nil, nil
+func (s *PostgresStore) GetToDoById(id int) (*models.ToDo, error) {
+	query := `SELECT * FROM todo WHERE id = $1`
+	rows, err := s.db.Query(query, id)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		return scanTodos(rows)
+	}
+	return nil, fmt.Errorf("todo %d not found", id)
+}
+
+func scanTodos(rows *sql.Rows) (*models.ToDo, error) {
+	todo := new(models.ToDo)
+	err := rows.Scan(&todo.Id, &todo.Body, &todo.CreatedAt)
+	return todo, err
 }
