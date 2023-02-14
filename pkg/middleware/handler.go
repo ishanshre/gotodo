@@ -3,6 +3,7 @@ package middleware
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -66,11 +67,32 @@ func (s *APIServer) handleCreateToDo(w http.ResponseWriter, r *http.Request) err
 }
 
 func (s *APIServer) handleUpdateToDo(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	id, err := getId(r)
+
+	if err != nil {
+		return err
+	}
+
+	updateTodo := new(models.ToDo)                                      // create a new varible to store data from endpoint
+	if err := json.NewDecoder(r.Body).Decode(&updateTodo); err != nil { // decoding json into struct
+		return err
+	}
+	if err := s.store.UpdateToDo(id, updateTodo); err != nil {
+		return err
+	}
+	return writeJSON(w, http.StatusOK, updateTodo)
 }
 
 func (s *APIServer) handleDeleteToDo(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	id, err := getId(r)
+	if err != nil {
+		return err
+	}
+	if err := s.store.DeleteToDo(id); err != nil {
+		return err
+	}
+	log.Printf("Id %v successfully deleted\n", id)
+	return writeJSON(w, http.StatusOK, map[string]int{"deleted_id": id})
 }
 
 func getId(r *http.Request) (int, error) {

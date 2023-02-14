@@ -15,7 +15,7 @@ import (
 type Storage interface {
 	CreateToDo(*models.ToDo) error
 	DeleteToDo(int) error
-	UpdateToDo(*models.ToDo) error
+	UpdateToDo(int, *models.ToDo) error
 	GetTodos() ([]*models.ToDo, error)
 	GetToDoById(int) (*models.ToDo, error)
 }
@@ -67,10 +67,30 @@ func (s *PostgresStore) CreateToDo(todo *models.ToDo) error {
 	log.Println("Todo Created Successfully")
 	return nil
 }
-func (s *PostgresStore) DeleteToDo(int) error {
+func (s *PostgresStore) DeleteToDo(id int) error {
+	query := `
+		DELETE FROM todo
+		WHERE id = $1;
+	`
+	s.db.Exec("COMMIT")
+	_, err := s.db.Query(query, id)
+	if err != nil {
+		return err
+	}
 	return nil
 }
-func (s *PostgresStore) UpdateToDo(*models.ToDo) error {
+func (s *PostgresStore) UpdateToDo(id int, updateTodo *models.ToDo) error {
+	query := `
+		UPDATE todo
+		SET body = $1, created_at = $2
+		WHERE id = $3
+	`
+	s.db.Exec("COMMIT")
+	_, err := s.db.Query(query, updateTodo.Body, updateTodo.CreatedAt, id)
+	if err != nil {
+		return err
+	}
+	log.Printf("Todo with id %v updated successfully\n", id)
 	return nil
 }
 func (s *PostgresStore) GetTodos() ([]*models.ToDo, error) {
